@@ -160,7 +160,8 @@ def menu():
     # botones 
     boton_jugar = pygame.Rect(ventana_ancho / 2 - 100, ventana_alto / 2 - 50, 200, 50)
     boton_salir = pygame.Rect(ventana_ancho / 2 - 100, ventana_alto / 2 + 50, 200, 50)
-
+    # para la música
+    musica("menu.mp3")
     run = True
     while run:
         for event in pygame.event.get():
@@ -530,8 +531,8 @@ def display_message(message):
     pygame.display.update()
     
 def mostrar_nivel_subido():
-    ventana.fill((0, 0, 0))  # Fondo negro
-    
+    ventana.fill((0, 0, 0)) 
+    musica("menu.mp3")# Fondo negro
     # Dibujar el texto en el centro
     texto = f"¡Has subido de nivel! Ahora eres nivel {tierra.level}"
     # calcula el tamaño del texto
@@ -570,6 +571,7 @@ def mostrar_nivel_subido():
 def mostrar_game_over():
     # cambia el fondo a rojo, rojo=(255,0,0)
     ventana.fill((255, 0, 0)) 
+    musica("game_over.mp3")
     
     # dibuja "Game Over" centrado
     texto = "Game Over"
@@ -603,6 +605,12 @@ def mostrar_game_over():
 
     pygame.display.update()
     clock.tick(60)
+def musica(ruta, loop=-1,volumen =0.5):
+    # para ir cambiando la musica de fondo
+    pygame.mixer.music.stop()
+    pygame.mixer.music.load(ruta)
+    pygame.mixer.music.set_volume(volumen)
+    pygame.mixer.music.play(loop)
     
 #llamar a la funcion movetype
 ataq_normal = MoveType(name="normal")
@@ -679,7 +687,7 @@ def game_loop():
 
     print("Iniciando el juego...")
     
-    game_status = 'select rival'
+    game_status = 'select rival'  
     selected_enemy = None
     #controla si el bucle se está ejecutando
     running = True
@@ -690,7 +698,7 @@ def game_loop():
             #detecta el click izquierdo
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  
                 mouse_pos = pygame.mouse.get_pos()
-                for enemy in enemys:
+                for enemy in enemigos_disponibles:
                     #si hace click izuierdo en uno de los enemigos, este se selecciona
                     if enemy.rect.collidepoint(mouse_pos) and enemy.vida > 0:
                         selected_enemy = enemy
@@ -701,8 +709,12 @@ def game_loop():
         ventana.fill(black)
 
         if game_status == 'select rival':
+
+            # solo se pueden elegir enemigos de menor o igual nivel que la tierra
+            enemigos_disponibles = [enemy for enemy in enemys if enemy.level <= tierra.level]
+    
             #dinuja texto para indicar que hay que seleccionar al enemigo
-            dibujar_texto("Selecciona tu enemigo", font2, white, ventana, 100, 30)
+            dibujar_texto(f"Selecciona un enemigo (Nivel <= {tierra.level})", font3, white, ventana, 80, 30)
             #dibuja los enemigos en la pantalla
             for idx, enemy in enumerate(enemys):
                 row = idx // 3  #fila
@@ -722,9 +734,19 @@ def game_loop():
                     enemy.y = 450
                 enemy.rect.center = (enemy.x, enemy.y)
                 enemy.dibujar_personaje(ventana)
+                # mnuestra el nivel del enemigo
+                dibujar_texto(f"Nivel: {enemy.level}", font3, white, ventana, enemy.x-10, enemy.y + 10)
                 
         # si el estatus del juego es "battle"
         elif game_status == 'battle' and selected_enemy is not None:
+            # musica cambia cada 3 niveles, el sol tiene su propia musica
+            if tierra.level <= 3:
+                musica("batalla1.mp3") 
+            elif tierra.level <= 6:
+                musica("batalla3.mp3")  
+            else:
+                musica("batalla2.mp3")  
+
             #configura la posición de los personajes y bibuja la barra de vida
             #ubicación de la tierra
             tierra.x = 100  # se ubibicac a la derecha
@@ -788,8 +810,6 @@ def game_loop():
                             game_status = "level up"  # Cambiar a la fase de nivelación}
                             selected_enemy=None
 
-
-
             pygame.display.update()
             clock.tick(60)
         #turno del enemigo
@@ -827,6 +847,7 @@ def game_loop():
         #subir nivel
         elif game_status == "level up":
             #muestra el mensaje
+            musica("menu.mp3")
             resultado = mostrar_nivel_subido()  
             if resultado == "exit":
                 #salir del juego 
